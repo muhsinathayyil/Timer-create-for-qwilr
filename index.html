@@ -122,4 +122,45 @@
   </div>
   <div class="bar-wrap"><div class="bar-fill" id="fill"></div></div>
   <div class="footer">
-    Pricing and av
+    Pricing and availability guaranteed until <strong id="expiry-display">—</strong>.<br />
+    Sign now to lock in your rate and reserve your bootcamp slot.
+  </div>
+</div>
+<script>
+  const params = new URLSearchParams(window.location.search);
+  const dateParam = params.get('date');
+  const SENT_DATE = dateParam ? new Date(dateParam) : new Date();
+  const DAYS_VALID = 14;
+
+  const expiry = new Date(SENT_DATE);
+  expiry.setDate(expiry.getDate() + DAYS_VALID);
+  expiry.setHours(23, 59, 59, 0);
+
+  const totalMs = DAYS_VALID * 24 * 60 * 60 * 1000;
+
+  document.getElementById('expiry-display').textContent = expiry.toLocaleDateString('en-GB', {
+    day: '2-digit', month: 'short', year: 'numeric'
+  });
+
+  function pad(n) { return String(n).padStart(2, '0'); }
+
+  function tick() {
+    const diff = expiry - Date.now();
+    if (diff <= 0) {
+      document.getElementById('units').innerHTML = '<div class="expired">This proposal has expired.</div>';
+      document.getElementById('fill').style.width = '100%';
+      return;
+    }
+    document.getElementById('days').textContent  = pad(Math.floor(diff / 86400000));
+    document.getElementById('hours').textContent = pad(Math.floor((diff % 86400000) / 3600000));
+    document.getElementById('mins').textContent  = pad(Math.floor((diff % 3600000) / 60000));
+    document.getElementById('secs').textContent  = pad(Math.floor((diff % 60000) / 1000));
+    const elapsed = totalMs - diff;
+    document.getElementById('fill').style.width = Math.min(100, (elapsed / totalMs) * 100).toFixed(2) + '%';
+  }
+
+  tick();
+  setInterval(tick, 1000);
+</script>
+</body>
+</html>
