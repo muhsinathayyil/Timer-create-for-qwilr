@@ -6,8 +6,9 @@
   <title>Opus Proposal Timer</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
+
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
       background: #ffffff;
       display: flex;
       align-items: center;
@@ -15,6 +16,7 @@
       min-height: 100vh;
       padding: 2rem 1rem;
     }
+
     .wrap {
       text-align: center;
       max-width: 560px;
@@ -24,6 +26,7 @@
       border-radius: 16px;
       background: #ffffff;
     }
+
     .top-label {
       font-size: 12px;
       font-weight: 600;
@@ -32,6 +35,7 @@
       color: #888;
       margin-bottom: 1.5rem;
     }
+
     .units {
       display: flex;
       justify-content: center;
@@ -40,11 +44,13 @@
       margin-bottom: 1.5rem;
       flex-wrap: wrap;
     }
+
     .unit {
       display: flex;
       flex-direction: column;
       align-items: center;
     }
+
     .num {
       font-size: 56px;
       font-weight: 600;
@@ -58,6 +64,7 @@
       font-variant-numeric: tabular-nums;
       letter-spacing: -0.02em;
     }
+
     .lbl {
       font-size: 11px;
       font-weight: 500;
@@ -65,6 +72,7 @@
       letter-spacing: 0.1em;
       color: #aaa;
     }
+
     .sep {
       font-size: 48px;
       font-weight: 300;
@@ -72,6 +80,7 @@
       line-height: 1;
       padding-top: 14px;
     }
+
     .bar-wrap {
       height: 4px;
       background: #eee;
@@ -80,6 +89,7 @@
       margin: 0 auto 1.5rem;
       overflow: hidden;
     }
+
     .bar-fill {
       height: 100%;
       border-radius: 2px;
@@ -87,95 +97,157 @@
       transition: width 1s linear;
       width: 0%;
     }
+
     .footer {
       font-size: 13px;
       color: #777;
       line-height: 1.6;
     }
+
     .footer strong {
       color: #111;
       font-weight: 600;
     }
+
     .expired {
       font-size: 20px;
       font-weight: 600;
       color: #c0392b;
       padding: 1rem 0;
     }
+
+    .error {
+      font-size: 16px;
+      font-weight: 600;
+      color: #c0392b;
+      padding: 1rem 0;
+      line-height: 1.5;
+    }
+
     @media (max-width: 480px) {
-      .num { font-size: 38px; width: 64px; padding: 10px 0; }
-      .sep { font-size: 32px; }
+      .num {
+        font-size: 38px;
+        width: 64px;
+        padding: 10px 0;
+      }
+
+      .sep {
+        font-size: 32px;
+      }
     }
   </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="top-label">This proposal expires in</div>
-  <div class="units" id="units">
-    <div class="unit"><div class="num" id="days">--</div><div class="lbl">days</div></div>
-    <div class="sep">:</div>
-    <div class="unit"><div class="num" id="hours">--</div><div class="lbl">hours</div></div>
-    <div class="sep">:</div>
-    <div class="unit"><div class="num" id="mins">--</div><div class="lbl">minutes</div></div>
-    <div class="sep">:</div>
-    <div class="unit"><div class="num" id="secs">--</div><div class="lbl">seconds</div></div>
+  <div class="wrap">
+    <div class="top-label">This proposal expires in</div>
+
+    <div class="units" id="units">
+      <div class="unit">
+        <div class="num" id="days">--</div>
+        <div class="lbl">days</div>
+      </div>
+      <div class="sep">:</div>
+      <div class="unit">
+        <div class="num" id="hours">--</div>
+        <div class="lbl">hours</div>
+      </div>
+      <div class="sep">:</div>
+      <div class="unit">
+        <div class="num" id="mins">--</div>
+        <div class="lbl">minutes</div>
+      </div>
+      <div class="sep">:</div>
+      <div class="unit">
+        <div class="num" id="secs">--</div>
+        <div class="lbl">seconds</div>
+      </div>
+    </div>
+
+    <div class="bar-wrap">
+      <div class="bar-fill" id="fill"></div>
+    </div>
+
+    <div class="footer">
+      Pricing and availability guaranteed until <strong id="expiry-display">—</strong>.<br />
+      Sign now to lock in your rate and reserve your bootcamp slot.
+    </div>
   </div>
-  <div class="bar-wrap"><div class="bar-fill" id="fill"></div></div>
-  <div class="footer">
-    Pricing and availability guaranteed until <strong id="expiry-display">—</strong>.<br />
-    Sign now to lock in your rate and reserve your bootcamp slot.
-  </div>
-</div>
-<script>
-  function parseDate(str) {
-    if (!str) return new Date();
-    const months = {jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
-    const parts = str.split('-');
-    if (parts.length === 3 && isNaN(parts[1])) {
-      const d = parseInt(parts[0], 10);
-      const m = months[parts[1].toLowerCase()];
-      const y = parseInt(parts[2], 10);
-      if (!isNaN(d) && m !== undefined && !isNaN(y)) return new Date(y, m, d);
+
+  <script>
+    const DAYS_VALID = 14;
+
+    function pad(n) {
+      return String(n).padStart(2, "0");
     }
-    return new Date(str);
-  }
 
-  const params = new URLSearchParams(window.location.search);
-  const dateParam = params.get('date');
-  const SENT_DATE = parseDate(dateParam);
-  const DAYS_VALID = 14;
-
-  const expiry = new Date(SENT_DATE);
-  expiry.setDate(expiry.getDate() + DAYS_VALID);
-  expiry.setHours(23, 59, 59, 0);
-
-  const totalMs = DAYS_VALID * 24 * 60 * 60 * 1000;
-
-  document.getElementById('expiry-display').textContent = expiry.toLocaleDateString('en-GB', {
-    day: '2-digit', month: 'short', year: 'numeric'
-  });
-
-  function pad(n) { return String(n).padStart(2, '0'); }
-
-  function tick() {
-    const diff = expiry - Date.now();
-    if (diff <= 0) {
-      document.getElementById('units').innerHTML = '<div class="expired">This proposal has expired.</div>';
-      document.getElementById('fill').style.width = '100%';
-      return;
+    function showError(message) {
+      document.getElementById("units").innerHTML = '<div class="error">' + message + "</div>";
+      document.getElementById("fill").style.width = "0%";
+      document.getElementById("expiry-display").textContent = "Invalid date";
     }
-    document.getElementById('days').textContent  = pad(Math.floor(diff / 86400000));
-    document.getElementById('hours').textContent = pad(Math.floor((diff % 86400000) / 3600000));
-    document.getElementById('mins').textContent  = pad(Math.floor((diff % 3600000) / 60000));
-    document.getElementById('secs').textContent  = pad(Math.floor((diff % 60000) / 1000));
-    const elapsed = totalMs - diff;
-    document.getElementById('fill').style.width = Math.min(100, (elapsed / totalMs) * 100).toFixed(2) + '%';
-  }
 
-  tick();
-  setInterval(tick, 1000);
-</script>
+    function getProposalDateFromUrl() {
+      const params = new URLSearchParams(window.location.search);
+      const proposalDateParam = params.get("proposalDate");
+
+      if (!proposalDateParam) {
+        return null;
+      }
+
+      const parsed = new Date(proposalDateParam);
+
+      if (Number.isNaN(parsed.getTime())) {
+        return null;
+      }
+
+      return parsed;
+    }
+
+    const sentDate = getProposalDateFromUrl();
+
+    if (!sentDate) {
+      showError("Missing or invalid proposal date.");
+    } else {
+      const expiry = new Date(sentDate);
+      expiry.setDate(expiry.getDate() + DAYS_VALID);
+      expiry.setHours(23, 59, 59, 999);
+
+      const totalMs = expiry.getTime() - sentDate.getTime();
+
+      document.getElementById("expiry-display").textContent = expiry.toLocaleDateString("en-GB", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric"
+      });
+
+      function tick() {
+        const now = Date.now();
+        const diff = expiry.getTime() - now;
+
+        if (diff <= 0) {
+          document.getElementById("units").innerHTML = '<div class="expired">This proposal has expired.</div>';
+          document.getElementById("fill").style.width = "100%";
+          return;
+        }
+
+        const days = Math.floor(diff / 86400000);
+        const hours = Math.floor((diff % 86400000) / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        const secs = Math.floor((diff % 60000) / 1000);
+
+        document.getElementById("days").textContent = pad(days);
+        document.getElementById("hours").textContent = pad(hours);
+        document.getElementById("mins").textContent = pad(mins);
+        document.getElementById("secs").textContent = pad(secs);
+
+        const elapsed = totalMs - diff;
+        const percent = Math.min(100, Math.max(0, (elapsed / totalMs) * 100));
+        document.getElementById("fill").style.width = percent.toFixed(2) + "%";
+      }
+
+      tick();
+      setInterval(tick, 1000);
+    }
+  </script>
 </body>
 </html>
-```
-
